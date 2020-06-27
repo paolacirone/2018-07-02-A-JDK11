@@ -5,8 +5,11 @@
 package it.polito.tdp.extflightdelays;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.extflightdelays.model.Adiacenza;
+import it.polito.tdp.extflightdelays.model.Airport;
 import it.polito.tdp.extflightdelays.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,7 +38,7 @@ public class ExtFlightDelaysController {
     private Button btnAnalizza; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbBoxAeroportoPartenza"
-    private ComboBox<?> cmbBoxAeroportoPartenza; // Value injected by FXMLLoader
+    private ComboBox<Airport> cmbBoxAeroportoPartenza; // Value injected by FXMLLoader
 
     @FXML // fx:id="btnAeroportiConnessi"
     private Button btnAeroportiConnessi; // Value injected by FXMLLoader
@@ -48,17 +51,58 @@ public class ExtFlightDelaysController {
 
     @FXML
     void doAnalizzaAeroporti(ActionEvent event) {
-
+    	txtResult.clear();
+    	Double miglia = null;
+    	try {
+    		miglia = Double.parseDouble(distanzaMinima.getText());
+    	} catch(NumberFormatException e) {
+    		txtResult.appendText("Inserire un numero valido!");
+    		return;
+    	}
+    	
+    	List<Airport> airports = this.model.buildGraph(miglia);
+    	this.cmbBoxAeroportoPartenza.getItems().setAll(airports);
     }
 
     @FXML
     void doCalcolaAeroportiConnessi(ActionEvent event) {
-
+    	txtResult.clear();
+    	Airport source = this.cmbBoxAeroportoPartenza.getValue();
+    	if(source == null) {
+    		txtResult.appendText("Selezionare un aereporto di partenza");
+    		return;
+    	}
+    	
+    	List<Adiacenza> connessi = this.model.getConnessi(source);
+    	txtResult.appendText("Aeroporti connessi a "+source+"\n\n");
+    	for(Adiacenza a : connessi) {
+    		txtResult.appendText(a.toString()+"\n");
+    	}
     }
 
     @FXML
     void doCercaItinerario(ActionEvent event) {
-
+    	txtResult.clear();
+    	Airport source = this.cmbBoxAeroportoPartenza.getValue();
+    	if(source == null) {
+    		txtResult.appendText("Selezionare un aereporto di partenza");
+    		return;
+    	}
+    	
+    	Double miglia = null;
+    	try {
+    		miglia = Double.parseDouble(numeroVoliTxtInput.getText());
+    	} catch(NumberFormatException e) {
+    		txtResult.appendText("Inserire un numero valido!");
+    		return;
+    	}
+    	
+    	List<Airport> path = this.model.trovaPercorso(miglia, source);
+    	txtResult.appendText(String.format("L'itenaria migliore con %.1f miglia permette di visitare %d città con %.1f miglia \n\n", 
+    			miglia, path.size(), miglia-this.model.getMigliaBest()));
+    	for(Airport a : path)
+    		txtResult.appendText(a.toString()+"\n");
+    	
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
